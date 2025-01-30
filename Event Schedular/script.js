@@ -1,129 +1,104 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const setHoursButton = document.getElementById('setHoursButton');
-    const resetHoursButton = document.getElementById('resetHoursButton');
-    const workStartInput = document.getElementById('workStart');
-    const workEndInput = document.getElementById('workEnd');
-    const addEventButton = document.getElementById('addEventButton');
-    const eventTitleInput = document.getElementById('eventTitle');
-    const startTimeInput = document.getElementById('startTime');
-    const endTimeInput = document.getElementById('endTime');
-    const eventsList = document.getElementById('eventsList');
+let events = [];
 
-    let workingHours = JSON.parse(localStorage.getItem('workingHours')) || {};
-    let events = JSON.parse(localStorage.getItem('events')) || [];
+const setWorkingHoursButton = document.getElementById('setHoursButton');
+const resetWorkingHoursButton = document.getElementById('resetHoursButton');
+const addEventButton = document.getElementById('addEventButton');
+const eventSearch = document.getElementById('eventSearch');
+const eventsList = document.getElementById('eventsList');
+const darkModeToggle = document.getElementById('darkModeToggle');
 
-    function updateWorkingHoursDisplay() {
-        if (workingHours.start && workingHours.end) {
-            setHoursButton.textContent = `Working Hours: ${workingHours.start} - ${workingHours.end}`;
+setWorkingHoursButton.addEventListener('click', setWorkingHours);
+resetWorkingHoursButton.addEventListener('click', resetWorkingHours);
+addEventButton.addEventListener('click', addEvent);
+darkModeToggle.addEventListener('click', toggleDarkMode);
+
+
+function setWorkingHours() {
+    const workStart = document.getElementById('workStart').value;
+    const workEnd = document.getElementById('workEnd').value;
+    console.log(`Working hours set from ${workStart} to ${workEnd}`);
+}
+
+function resetWorkingHours() {
+    document.getElementById('workStart').value = '';
+    document.getElementById('workEnd').value = '';
+}
+
+
+function addEvent() {
+    const eventTitle = document.getElementById('eventTitle').value;
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
+    const category = document.getElementById('eventCategory').value;
+    const recurring = document.getElementById('recurring').checked;
+
+    if (!eventTitle || !startTime || !endTime) {
+        alert('Please fill out all fields');
+        return;
+    }
+
+    const event = {
+        title: eventTitle,
+        startTime,
+        endTime,
+        category,
+        recurring
+    };
+
+    events.push(event);
+    displayEvents();
+    clearForm();
+}
+
+
+function displayEvents() {
+    eventsList.innerHTML = '';
+
+    events.forEach((event, index) => {
+        const eventItem = document.createElement('li');
+        eventItem.classList.add(event.category);
+        eventItem.innerHTML = `
+            <div>
+                <strong>${event.title}</strong>
+                <p>${event.startTime} - ${event.endTime}</p>
+                ${event.recurring ? '<span>(Recurring)</span>' : ''}
+            </div>
+            <button class="delete-btn" onclick="deleteEvent(${index})">Delete</button>
+        `;
+        eventsList.appendChild(eventItem);
+    });
+}
+
+
+function deleteEvent(index) {
+    events.splice(index, 1);
+    displayEvents();
+}
+
+
+function clearForm() {
+    document.getElementById('eventTitle').value = '';
+    document.getElementById('startTime').value = '';
+    document.getElementById('endTime').value = '';
+    document.getElementById('recurring').checked = false;
+}
+
+
+function searchEvents() {
+    const searchQuery = eventSearch.value.toLowerCase();
+    const eventItems = eventsList.getElementsByTagName('li');
+
+    Array.from(eventItems).forEach(item => {
+        const eventTitle = item.querySelector('strong').textContent.toLowerCase();
+        if (eventTitle.indexOf(searchQuery) === -1) {
+            item.style.display = 'none';
         } else {
-            setHoursButton.textContent = 'Set Working Hours';
+            item.style.display = '';
         }
-    }
-
-    function updateEventsDisplay() {
-        eventsList.innerHTML = '';
-        events.forEach((event, index) => {
-            const li = document.createElement('li');
-            li.textContent = `${event.title} - ${event.start} to ${event.end}`;
-            
-            const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'Delete';
-            deleteButton.classList.add('btn', 'btn-delete');
-            deleteButton.addEventListener('click', () => deleteEvent(index));
-            
-            li.appendChild(deleteButton);
-            eventsList.appendChild(li);
-        });
-    }
-
-    function saveToLocalStorage() {
-        localStorage.setItem('workingHours', JSON.stringify(workingHours));
-        localStorage.setItem('events', JSON.stringify(events));
-    }
-
-    function isWithinWorkingHours(start, end) {
-        return start >= workingHours.start && end <= workingHours.end;
-    }
-
-    function hasOverlap(newStart, newEnd) {
-        return events.some(event => 
-            (newStart < event.end && newEnd > event.start)
-        );
-    }
-
-    function deleteEvent(index) {
-        events.splice(index, 1);
-        saveToLocalStorage();
-        updateEventsDisplay();
-    }
-
-    setHoursButton.addEventListener('click', () => {
-        const start = workStartInput.value;
-        const end = workEndInput.value;
-
-        if (!start || !end) {
-            alert('Please set both start and end working hours');
-            return;
-        }
-
-        if (start >= end) {
-            alert('End time must be after start time');
-            return;
-        }
-
-        workingHours = { start, end };
-        saveToLocalStorage();
-        updateWorkingHoursDisplay();
     });
+}
 
-    resetHoursButton.addEventListener('click', () => {
-        localStorage.removeItem('workingHours');
-        workingHours = {};
-        workStartInput.value = '';
-        workEndInput.value = '';
-        updateWorkingHoursDisplay();
-    });
-
-    addEventButton.addEventListener('click', () => {
-        const title = eventTitleInput.value;
-        const start = startTimeInput.value;
-        const end = endTimeInput.value;
-
-        if (!title || !start || !end) {
-            alert('Please fill in all fields');
-            return;
-        }
-
-        if (start >= end) {
-            alert('Event end time must be after start time');
-            return;
-        }
-
-        if (!workingHours.start || !workingHours.end) {
-            alert('Please set working hours before adding events');
-            return;
-        }
-
-        if (!isWithinWorkingHours(start, end)) {
-            alert('Event must be within working hours');
-            return;
-        }
-
-        if (hasOverlap(start, end)) {
-            alert('This event overlaps with an existing event');
-            return;
-        }
-
-        events.push({ title, start, end });
-        saveToLocalStorage();
-        updateEventsDisplay();
-
-        eventTitleInput.value = '';
-        startTimeInput.value = '';
-        endTimeInput.value = '';
-    });
-
-    // Initial setup
-    updateWorkingHoursDisplay();
-    updateEventsDisplay();
-});
+// Toggle Dark Mode
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+}
