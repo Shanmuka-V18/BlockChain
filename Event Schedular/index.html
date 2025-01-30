@@ -13,6 +13,7 @@
     <div class="app-container">
         <header class="header">
             <h1 class="app-title">Event Scheduler</h1>
+            <button class="btn" id="darkModeToggle">Toggle Dark Mode</button>
         </header>
 
         <main class="main-content">
@@ -43,6 +44,18 @@
                 <div class="input-group">
                     <label for="endTime">End Time</label>
                     <input type="time" id="endTime" class="time-input">
+                </div>
+                <div class="input-group">
+                    <label for="eventCategory">Category</label>
+                    <select id="eventCategory">
+                        <option value="work">Work</option>
+                        <option value="meeting">Meeting</option>
+                        <option value="personal">Personal</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="recurring">Recurring</label>
+                    <input type="checkbox" id="recurring">
                 </div>
                 <button class="btn" id="addEventButton">Add Event</button>
             </div>
